@@ -2,12 +2,10 @@
 
 UDPServer::UDPServer(std::string IPv4, int port)
 {  
-    char bufor[256];
     c_IPv4 = new char [IPv4.length()+1];
     std::strcpy (c_IPv4, IPv4.c_str());
 
     bzero( & serwer, sizeof( serwer ) );
-    bzero( bufor, sizeof( bufor ) );
    
     serwer.sin_family = AF_INET;
     serwer.sin_port = htons( port );
@@ -30,11 +28,12 @@ UDPServer::UDPServer(std::string IPv4, int port)
         throw error;
     }
 //Default size buffor
-    buffor = new char[8];
+    receiptBuffor = new char[receiptBufforSize];
 }
 
 UDPServer::~UDPServer()
 {
+    this->liseningActive=false;
     shutdown( useSocet, SHUT_RDWR );
 }
 
@@ -77,62 +76,33 @@ void UDPServer::sendMessage(sockaddr_in &target, char * c_message, size_t messag
     if( sendto( useSocet, c_message,messageSize, 0,( struct sockaddr * ) & target, len ) < 0 )
     {
         std::string error="sendto() ERROR IP: ";
-        /*error+=c_targetIPv4;
-        error+=" Port: ";
-        error+=std::to_string(targetPort);*/
         throw error;
     }
 }
 
-void UDPServer::startLising()
+void UDPServer::startLisening()
 {
     struct sockaddr_in from;
+    this->liseningActive=true;
 
-    while(1)
+    while(this->liseningActive)
     {
         bzero( & from, sizeof( from ) );
-
-        if( recvfrom( useSocet, receiptBuffor, 256, 0,( struct sockaddr * ) & from, & len ) < 0 )
+        bzero( receiptBuffor, receiptBufforSize );
+        ssize_t returnRec = recvfrom( useSocet, receiptBuffor, receiptBufforSize, 0,( struct sockaddr * ) & from, & len );
+        if(  returnRec < 0 )
         {
-            std::string error = "recvfrom() ERROR";
+            std::string error = "recvfrom() ERROR: "+ std::to_string(returnRec);
+            //exit(-1);
             throw error;
         }
-       this->operationOnReceipt(from,receiptBuffor);
-    }    
+        if(connectManager!=0)
+            connectManager->udpReceipt(from,receiptBuffor);
+    }   
 
 }
 
-/*void UDPServer::test()
-{
-    while( 1 )
-    {
-        struct sockaddr_in from;
-        bzero( & from, sizeof( from ) );
-        bzero( bufor, sizeof( bufor ) );
-       
-        printf( "Waiting for connection...\n" );
-        if( recvfrom( useSocet, bufor, sizeof( bufor ), 0,( struct sockaddr * ) & from, & len ) < 0 )
-        {
-            perror( "recvfrom() ERROR" );
-            exit( - 1 );
-        }
-        printf( "|Wiadomosc od clienta|: %s \n", bufor );
-        char bufor_ip[ 128 ];
-        bzero( bufor_ip, sizeof( bufor_ip ) );
-        printf( "|Client ip: %s port: %d|\n", inet_ntop( AF_INET, & from.sin_addr, bufor_ip, sizeof( bufor_ip ) ), ntohs( from.sin_port ) );
-        //printf("  New connection from: %s:%d\n",inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
-       
-        bzero( bufor, sizeof( bufor ) );
-        strcpy( bufor, "Wyslane z serwera" );
-        if( sendto( useSocet, bufor, strlen( bufor ), 0,( struct sockaddr * ) & from, len ) < 0 )
-        {
-            perror( "sendto() ERROR" );
-            exit( - 1 );
-        }
-    }
-}*/
-
 void UDPServer::operationOnReceipt(sockaddr_in from,char *receipt)
 {
-    
+
 }
