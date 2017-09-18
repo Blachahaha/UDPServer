@@ -15,94 +15,74 @@ UDPServer::UDPServer(std::string IPv4, int port)
         throw error;
     }
    
-    if(( useSocet = socket( AF_INET, SOCK_DGRAM, 0 ) ) < 0 )
+    if(( usedSocet = socket( AF_INET, SOCK_DGRAM, 0 ) ) < 0 )
     {
         std::string error="socket() ERROR";
         throw error;
     }
    
     len = sizeof( serwer );
-    if( bind( useSocet,( struct sockaddr * ) & serwer, len ) < 0 )
+    if( bind( usedSocet,( struct sockaddr * ) & serwer, len ) < 0 )
     {
         std::string error="bind() ERROR";
         throw error;
     }
-//Default size buffor
-    receiptBuffor = new char[receiptBufforSize];
+
+    messageBuffor = new char[messageBufforSize];
+
+    //fcntl(usedSocet, F_SETFL, O_NONBLOCK);
 }
 
 UDPServer::~UDPServer()
 {
     this->liseningActive=false;
-    shutdown( useSocet, SHUT_RDWR );
+    shutdown( usedSocet, SHUT_RDWR );
 }
-
-void UDPServer::setReceiptBuffor(int size)
-{
-    receiptBuffor = new char[size];
-    receiptBufforSize = size;
-    
-}
-
-void UDPServer::sendMessage(std::string targetIPv4, int targetPort, std::string message)
-{
-    char * c_targetIPv4 = new char [targetIPv4.length()+1];
-    std::strcpy (c_targetIPv4, targetIPv4.c_str());
-
-    char * c_message = new char [message.length()+1];
-    std::strcpy (c_message, message.c_str());
-    
-    this->sendMessage(c_targetIPv4, targetPort, c_message);
-
-}
-
- void UDPServer::sendMessage(char * c_targetIPv4, short targetPort, char * c_message)
- {
-    struct sockaddr_in target;
-    bzero( & target, sizeof( target ) );
-
-    target.sin_family = AF_INET;
-    target.sin_port = htons( targetPort );
-    if( inet_pton( AF_INET, c_targetIPv4, & serwer.sin_addr ) <= 0 )
-    {
-        std::string error="inet_pton() ERROR";
-        throw error;
-    }
-    this->sendMessage(target, c_message, strlen(c_message));
- }
 
 void UDPServer::sendMessage(sockaddr_in &target, char * c_message, size_t messageSize)
 {
-    if( sendto( useSocet, c_message,messageSize, 0,( struct sockaddr * ) & target, len ) < 0 )
+    if( sendto( usedSocet, c_message,messageSize, 0,( struct sockaddr * ) & target, len ) < 0 )
     {
         std::string error="sendto() ERROR IP: ";
         throw error;
     }
 }
 
-void UDPServer::startLisening()
+int UDPServer::getReceipt()
 {
-    struct sockaddr_in from;
-    this->liseningActive=true;
+    FD_ZERO(&fd_in);
+    FD_SET(usedSocet, &fd_in);
+    
+    struct timeval waitTime;
+    waitTime.tv_sec=0;
+    waitTime.tv_usec=0;
 
-    while(this->liseningActive)
+    int rv = select(usedSocet + 1, &fd_in, NULL, NULL, &waitTime);
+    if(rv<=0) 
+        return rv;
+
+    struct sockaddr_in * from = new sockaddr_in;
+    bzero( & from, sizeof( from ) );
+    bzero( messageBuffor, messageBufforSize );
+    ssize_t returnRec = recvfrom( usedSocet, messageBuffor, messageBufforSize, 0,( struct sockaddr * ) & from, & len );
+    if(  returnRec < 0 )
     {
-        bzero( & from, sizeof( from ) );
-        bzero( receiptBuffor, receiptBufforSize );
-        ssize_t returnRec = recvfrom( useSocet, receiptBuffor, receiptBufforSize, 0,( struct sockaddr * ) & from, & len );
-        if(  returnRec < 0 )
-        {
-            std::string error = "recvfrom() ERROR: "+ std::to_string(returnRec);
-            //exit(-1);
-            throw error;
-        }
-        if(connectManager!=0)
-            connectManager->udpReceipt(from,receiptBuffor);
-    }   
+        delete from;
+        std::string error = "recvfrom() ERROR: "+ std::to_string(returnRec);
+        return -2;
+    } 
 
-}
+    std::string str(messageBuffor);
+    std::cout<<str<<std::endl;
 
-void UDPServer::operationOnReceipt(sockaddr_in from,char *receipt)
-{
+    Receipt *receipt = new Receipt;
+    receipt->message= new char[messageBufforSize];
+    memcpy(receipt->message, messageBuffor, messageBufforSize);
+    
+    //strncpy(receipt->message, messageBuffor, messageBufforSize);
+    receipt->from = from;
+    Receipts.push_back(receipt);
+    //receiptBuffor->addReceipt( &from, messageBuffor);
+    return 1;
 
 }

@@ -12,39 +12,44 @@
 
 #include <netinet/in.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <iostream>
 #include <cstring>
 #include <string>
+#include <list>
+
+struct Receipt
+{
+    char *message;
+    sockaddr_in *from;
+};
+
 
 class UDPServer
 {
     public:
     UDPServer(std::string IPv4, int port);
     ~UDPServer();
-    void setReceiptBuffor(int size);
-
-    void sendMessage(std::string targetIPv4, int targetPort, std::string message);
-    void sendMessage(char * c_targetIPv4, short targetPort, char * c_message);
     void sendMessage(sockaddr_in &target, char * c_message, size_t messsageSize);
-    
-    void startLisening();
 
-    virtual void operationOnReceipt(sockaddr_in from,char *receipt);
+    int getReceipt(); 
+
+    char * messageBuffor;
+    std::list < Receipt* > Receipts;
 
 
-
-    
     private:
-    char * receiptBuffor;
-    bool liseningActive=false;
     char *c_IPv4;
     struct sockaddr_in serwer;
     socklen_t len;
-    int useSocet;
+    int usedSocet;
     char *buffor;
+    int messageBufforSize=512;
+    
+    fd_set fd_in;
 
-    int receiptBufforSize=512;
+    
 
 };
 
