@@ -35,7 +35,12 @@ UDPServer::UDPServer(std::string IPv4, int port)
 
 UDPServer::~UDPServer()
 {
-    this->liseningActive=false;
+    for(int i = Receipts.size(); i; i--)
+    {
+        delete Receipts.back();
+        Receipts.pop_back();
+    }
+
     shutdown( usedSocet, SHUT_RDWR );
 }
 
