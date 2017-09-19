@@ -77,9 +77,6 @@ int UDPServer::getReceipt()
         return -2;
     } 
 
-    std::string str(messageBuffor);
-    std::cout<<str<<std::endl;
-
     Receipt *receipt = new Receipt;
     receipt->message= new char[messageBufforSize];
     memcpy(receipt->message, messageBuffor, messageBufforSize);
