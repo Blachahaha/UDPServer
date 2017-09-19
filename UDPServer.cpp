@@ -37,7 +37,10 @@ UDPServer::~UDPServer()
 {
     for(int i = Receipts.size(); i; i--)
     {
-        delete Receipts.back();
+        Receipt * rec = Receipts.back();
+        delete rec->from;
+        delete rec->message;
+        delete rec;
         Receipts.pop_back();
     }
 
