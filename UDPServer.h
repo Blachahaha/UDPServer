@@ -31,12 +31,11 @@ class UDPServer
     public:
     UDPServer(std::string IPv4, int port);
     ~UDPServer();
-    void sendMessage(sockaddr_in &target, char * c_message, size_t messsageSize);
+    void sendMessage(sockaddr_in *target, char * c_message, size_t messsageSize);
     int getReceipt(); 
 
     char * messageBuffor;
     std::list < Receipt* > Receipts;
-
 
     private:
     char *c_IPv4;
@@ -44,7 +43,8 @@ class UDPServer
     socklen_t len;
     int usedSocet;
     char *buffor;
-    int messageBufforSize=512;
+    char bufforSend[256];
+    int messageBufforSize=256;
     fd_set fd_in;
 };
 

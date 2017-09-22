@@ -29,7 +29,6 @@ UDPServer::UDPServer(std::string IPv4, int port)
     }
 
     messageBuffor = new char[messageBufforSize];
-
     //fcntl(usedSocet, F_SETFL, O_NONBLOCK);
 }
 
@@ -47,11 +46,15 @@ UDPServer::~UDPServer()
     shutdown( usedSocet, SHUT_RDWR );
 }
 
-void UDPServer::sendMessage(sockaddr_in &target, char * c_message, size_t messageSize)
+void UDPServer::sendMessage(sockaddr_in *target, char * c_message, size_t messageSize)
 {
-    if( sendto( usedSocet, c_message,messageSize, 0,( struct sockaddr * ) & target, len ) < 0 )
+    memcpy(&bufforSend, c_message, messageSize);
+    std::cout<<bufforSend<<messageSize<<std::endl;
+    int err =sendto( usedSocet, bufforSend, messageSize, 0,( struct sockaddr * ) target, len );
+    if( err < 0 )
     {
-        std::string error="sendto() ERROR IP: ";
+        std::string error="sendto() ERROR: ";
+        error+=std::to_string(err);
         throw error;
     }
 }
@@ -80,14 +83,15 @@ int UDPServer::getReceipt()
         return -2;
     } 
 
+
+
     Receipt *receipt = new Receipt;
     receipt->message= new char[messageBufforSize];
     memcpy(receipt->message, messageBuffor, messageBufforSize);
-    
-    //strncpy(receipt->message, messageBuffor, messageBufforSize);
-    receipt->from = from;
+    receipt->from = new sockaddr_in;
+    memcpy(receipt->from, &from, sizeof(from));
     Receipts.push_back(receipt);
-    //receiptBuffor->addReceipt( &from, messageBuffor);
+
     return 1;
 
 }
