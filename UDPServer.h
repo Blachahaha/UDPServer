@@ -43,7 +43,6 @@ class UDPServer
     socklen_t len;
     int usedSocet;
     char *buffor;
-    char bufforSend[256];
     int messageBufforSize=256;
     fd_set fd_in;
 };

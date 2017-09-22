@@ -48,9 +48,7 @@ UDPServer::~UDPServer()
 
 void UDPServer::sendMessage(sockaddr_in *target, char * c_message, size_t messageSize)
 {
-    memcpy(&bufforSend, c_message, messageSize);
-    std::cout<<bufforSend<<messageSize<<std::endl;
-    int err =sendto( usedSocet, bufforSend, messageSize, 0,( struct sockaddr * ) target, len );
+    int err =sendto( usedSocet, c_message, messageSize, 0,( struct sockaddr * ) target, len );
     if( err < 0 )
     {
         std::string error="sendto() ERROR: ";
